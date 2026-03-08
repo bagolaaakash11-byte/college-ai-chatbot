@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIIET College AI Chatbot</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #FFD700;
+    --gold-dim: #b8970a;
+    --dark: #080810;
+    --darker: #04040a;
+    --card: rgba(255,215,0,0.04);
+    --border: rgba(255,215,0,0.2);
+    --user-bg: rgba(255,215,0,0.12);
+    --bot-bg: rgba(255,255,255,0.05);
+    --glow: 0 0 20px rgba(255,215,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--darker);
+    color: white;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,215,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,215,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glowing orbs */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,215,0,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .logo-ring {
+    width: 80px;
+    height: 80px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: var(--glow), inset 0 0 20px rgba(255,215,0,0.1);
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: var(--glow), inset 0 0 20px rgba(255,215,0,0.1); }
+    50% { box-shadow: 0 0 40px rgba(255,215,0,0.5), inset 0 0 30px rgba(255,215,0,0.2); }
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(255,215,0,0.5);
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 2px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    background: #00ff88;
+    border-radius: 50%;
+    animation: blink 2s ease-in-out infinite;
+    box-shadow: 0 0 8px #00ff88;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ---- CHAT WINDOW ---- */
+  #chatbox {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 24px 0 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), var(--glow);
+  }
+
+  #messages {
+    min-height: 320px;
+    max-height: 420px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 4px;
+    scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+
+  .message {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .user {
+    background: var(--user-bg);
+    border: 1px solid rgba(255,215,0,0.25);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    color: #fff;
+  }
+
+  .bot {
+    background: var(--bot-bg);
+    border: 1px solid rgba(255,255,255,0.08);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .bot .sender-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .bot a {
+    color: var(--gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    padding: 14px 18px;
+  }
+  .typing span {
+    width: 7px; height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+    opacity: 0.6;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+  }
+
+  /* ---- INPUT AREA ---- */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    align-items: center;
+  }
+
+  #user_input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 18px;
+    color: white;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #user_input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  }
+
+  #user_input::placeholder { color: rgba(255,255,255,0.25); }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--gold);
+    border-radius: 10px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn:hover {
+    background: var(--gold);
+    color: #000;
+    box-shadow: var(--glow);
+    transform: translateY(-1px);
+  }
+
+  .btn-send {
+    background: var(--gold);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .btn-send:hover {
+    background: #fff;
+    color: #000;
+  }
+
+  /* ---- QUICK QUESTIONS ---- */
+  .quick-section {
+    margin: 8px 0 20px;
+  }
+
+  .quick-label {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .quick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    background: rgba(255,215,0,0.06);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif;
+  }
+
+  .chip:hover {
+    background: rgba(255,215,0,0.15);
+    color: var(--gold);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+  }
+
+  /* ---- MAP ---- */
+  .map-section {
+    margin: 24px 0;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-header h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--border), transparent);
+  }
+
+  .map-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5), var(--glow);
+  }
+
+  .map-wrapper iframe {
+    display: block;
+    width: 100%;
+    height: 380px;
+    border: none;
+    filter: grayscale(30%) brightness(0.9);
+  }
+
+  /* ---- FAQ CARDS ---- */
+  .faq-section {
+    margin: 24px 0 40px;
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+
+  .faq-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .faq-card:hover {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.07);
+    transform: translateY(-2px);
+    box-shadow: var(--glow);
+  }
+
+  .faq-card .q {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .faq-card .a {
+    font-size: 0.95rem;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* ---- FOOTER ---- */
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 2px;
+    border-top: 1px solid rgba(255,215,0,0.08);
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .input-row { flex-wrap: wrap; }
+    #user_input { width: 100%; }
+    .btn { flex: 1; text-align: center; }
+    .faq-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-ring">🎓</div>
+    <h1>SIIET AI CHATBOT</h1>
+    <p class="subtitle">Srinivasa Institute of Engineering &amp; Technology</p>
+    <div class="status-bar">
+      <span class="status-dot"></span>
+      SYSTEM ONLINE — NLP ACTIVE
+    </div>
+  </header>
+
+  <!-- CHAT BOX -->
+  <div id="chatbox">
+    <div id="messages">
+      <div class="message bot">
+        <span class="sender-tag">SIIET BOT</span>
+        Hello! 👋 I'm your SIIET College AI Assistant. Ask me anything about the college — faculty, rooms, departments, and more!
+      </div>
+    </div>
+
+    <div class="input-row">
+      <input type="text" id="user_input" placeholder="Ask a college question..." autocomplete="off">
+      <button class="btn btn-send" onclick="sendMessage()">SEND</button>
+      <button class="btn" onclick="startListening()" id="micBtn">🎤 MIC</button>
+    </div>
+  </div>
+
+  <!-- QUICK QUESTIONS -->
+  <div class="quick-section">
+    <p class="quick-label">Quick Questions</p>
+    <div class="quick-chips">
+      <span class="chip" onclick="ask('Where is the library located?')">📚 Library Location</span>
+      <span class="chip" onclick="ask('Who is the HOD of Cybersecurity?')">👩‍🏫 HOD Cybersecurity</span>
+      <span class="chip" onclick="ask('Where is Cyber class located?')">🏫 Cyber Class</span>
+      <span class="chip" onclick="ask('Who is our Project Incharge?')">📋 Project Incharge</span>
+      <span class="chip" onclick="ask('Who is chairman of SIIET?')">🎖️ Chairman</span>
+      <span class="chip" onclick="ask('Who is incharge of cybersecurity?')">🛡️ CS Incharge</span>
+    </div>
+  </div>
+
+  <!-- FAQ CARDS -->
+  <div class="faq-section">
+    <div class="section-header">
+      <h2>📋 FAQ Directory</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="faq-grid" id="faqGrid"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-section">
+    <div class="section-header">
+      <h2>📍 College Location</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="map-wrapper">
+      <iframe
+        src="https://www.google.com/maps?q=SIIET%20Engineering%20College&output=embed"
+        loading="lazy"
+        allowfullscreen>
+      </iframe>
+    </div>
+  </div>
+
+  <footer>SIIET COLLEGE AI CHATBOT &nbsp;·&nbsp; CYBERSECURITY DEPT &nbsp;·&nbsp; DEVELOPED BY AAKASH</footer>
+
+</div>
+
+<script>
+  // ---- FAQ DATA (replaces Python/SQLite) ----
+  const FAQ = [
+    { q: "Where is library located?",       a: "2nd floor, left side corner at SIIET" },
+    { q: "Who is the HOD of Cybersecurity?", a: "Miss Anitha Madam" },
+    { q: "Who is our Project Incharge?",     a: "Ms Bhavani Madam" },
+    { q: "Incharge of cybersecurity?",       a: "Mr Vijay Sir" },
+    { q: "Where is Cyber class located?",    a: "1st floor room A103" },
+    { q: "Who is chairman of SIIET?",        a: "Mr Rangineni Venkata Rao Garu" }
+  ];
+
+  // ---- Render FAQ Cards ----
+  const grid = document.getElementById('faqGrid');
+  FAQ.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'faq-card';
+    card.innerHTML = `<div class="q">❓ ${item.q}</div><div class="a">${item.a}</div>`;
+    card.onclick = () => ask(item.q);
+    grid.appendChild(card);
+  });
+
+  // ---- Simple NLP matching (keyword overlap) ----
+  function normalize(str) {
+    return str.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ').filter(Boolean);
+  }
+
+  function similarity(input, question) {
+    const a = new Set(normalize(input));
+    const b = new Set(normalize(question));
+    let match = 0;
+    b.forEach(w => { if (a.has(w)) match++; });
+    return match / Math.max(a.size, b.size, 1);
+  }
+
+  function getBotReply(input) {
+    const text = input.toLowerCase();
+
+    // Greetings
+    if (/\b(hi|hello|hey)\b/.test(text)) return "Hello! 👋 I'm SIIET College AI Chatbot. How can I help you?";
+    if (/how are you/.test(text))         return "I'm always ready to help you! 😊";
+    if (/your name/.test(text))           return "I'm the SIIET College AI Chatbot! 🤖";
+    if (/\bbye\b/.test(text))             return "Goodbye! Have a great day! 👋";
+    if (/\b(map|location|where is siiet)\b/.test(text)) return "📍 Scroll down to see the college location map!";
+    if (/about siiet|college info/.test(text)) return "Learn more: <a href='https://www.google.com/search?q=SIIET+Engineering+College' target='_blank'>SIIET College on Google</a>";
+
+    // NLP match against FAQ
+    let best = 0, bestAnswer = null;
+    FAQ.forEach(item => {
+      const score = similarity(input, item.q);
+      if (score > best) { best = score; bestAnswer = item.a; }
+    });
+
+    if (best >= 0.35) return "✅ " + bestAnswer;
+
+    // Fallback
+    const query = encodeURIComponent(input);
+    return `I'm not sure about that. Try: <a href='https://www.google.com/search?q=${query}' target='_blank'>🔍 Google Search</a>`;
+  }
+
+  // ---- Chat Functions ----
+  function appendMessage(sender, html) {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'message ' + sender;
+    if (sender === 'bot') div.innerHTML = `<span class="sender-tag">SIIET BOT</span>${html}`;
+    else div.textContent = html;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    if (sender === 'bot') {
+      const plainText = div.innerText.replace('SIIET BOT', '').trim();
+      const utterance = new SpeechSynthesisUtterance(plainText);
+      utterance.rate = 0.95;
+      speechSynthesis.speak(utterance);
+    }
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'message bot typing';
+    div.id = 'typingIndicator';
+    div.innerHTML = `<span class="sender-tag">SIIET BOT</span><div class="typing"><span></span><span></span><span></span></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typingIndicator');
+    if (t) t.remove();
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('user_input');
+    const text = input.value.trim();
+    if (!text) return;
+    appendMessage('user', text);
+    input.value = '';
+    showTyping();
+    setTimeout(() => {
+      removeTyping();
+      appendMessage('bot', getBotReply(text));
+    }, 700 + Math.random() * 400);
+  }
+
+  function ask(question) {
+    document.getElementById('user_input').value = question;
+    sendMessage();
+    document.getElementById('chatbox').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  document.getElementById('user_input').addEventListener('keypress', e => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  // ---- Voice Input ----
+  let recognition;
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.lang = 'en-US';
+    recognition.onresult = e => {
+      document.getElementById('user_input').value = e.results[0][0].transcript;
+      sendMessage();
+    };
+    recognition.onstart = () => {
+      document.getElementById('micBtn').textContent = '🔴 STOP';
+      document.getElementById('micBtn').style.background = 'rgba(255,0,0,0.2)';
+    };
+    recognition.onend = () => {
+      document.getElementById('micBtn').textContent = '🎤 MIC';
+      document.getElementById('micBtn').style.background = '';
+    };
+  }
+
+  function startListening() {
+    if (recognition) recognition.start();
+    else appendMessage('bot', 'Voice input is not supported in this browser. Try Chrome!');
+  }
+</script>
+</body>
+</html>
